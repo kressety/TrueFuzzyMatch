@@ -1,7 +1,7 @@
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-import sys
 
 import numpy as np
 import pandas as pd
@@ -86,7 +86,9 @@ def compute_similarities(query_embedding, embeddings, max_workers=DEFAULT_MAX_WO
         if query_embedding is None:
             return [0.0] * len(embeddings)
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            similarities = list(executor.map(lambda emb: cosine_similarity(query_embedding, emb) if emb is not None else 0.0, embeddings))
+            similarities = list(
+                executor.map(lambda emb: cosine_similarity(query_embedding, emb) if emb is not None else 0.0,
+                             embeddings))
         return similarities
     except Exception as e:
         console.print(f"[red]相似度计算失败: {e}[/red]")
@@ -131,7 +133,8 @@ def process_A(model):
         table.add_row(str(i), file)
     console.print(table)
 
-    file_idx = IntPrompt.ask("请选择一个 .xlsx 文件（输入编号）", choices=[str(i) for i in range(len(xlsx_files))], default=0)
+    file_idx = IntPrompt.ask("请选择一个 .xlsx 文件（输入编号）", choices=[str(i) for i in range(len(xlsx_files))],
+                             default=0)
     A_table_path = xlsx_files[file_idx]
 
     try:
@@ -143,7 +146,8 @@ def process_A(model):
     console.print(f"已加载文件: {A_table_path}")
     console.print("A Table Columns:", A_df.columns.tolist())
 
-    col_idx = IntPrompt.ask("请选择 '物料名称' 所在的列（输入编号）", choices=[str(i) for i in range(len(A_df.columns))], default=0)
+    col_idx = IntPrompt.ask("请选择 '物料名称' 所在的列（输入编号）", choices=[str(i) for i in range(len(A_df.columns))],
+                            default=0)
     col_name = A_df.columns[col_idx]
 
     console.print(f"正在计算 '{col_name}' 列的嵌入向量（多线程）...")
@@ -177,7 +181,8 @@ def process_B(model):
     for i, file in enumerate(xlsx_files):
         table.add_row(str(i), file)
     console.print(table)
-    a_file_idx = IntPrompt.ask("请选择 A 表 .xlsx 文件（输入编号）", choices=[str(i) for i in range(len(xlsx_files))], default=0)
+    a_file_idx = IntPrompt.ask("请选择 A 表 .xlsx 文件（输入编号）", choices=[str(i) for i in range(len(xlsx_files))],
+                               default=0)
     A_table_path = xlsx_files[a_file_idx]
 
     # 自动匹配 .npy 文件
@@ -193,7 +198,8 @@ def process_B(model):
             for i, file in enumerate(npy_files):
                 table.add_row(str(i), file)
             console.print(table)
-            npy_idx = IntPrompt.ask("请选择 .npy 文件（输入编号）", choices=[str(i) for i in range(len(npy_files))], default=0)
+            npy_idx = IntPrompt.ask("请选择 .npy 文件（输入编号）", choices=[str(i) for i in range(len(npy_files))],
+                                    default=0)
             embedding_input_path = npy_files[npy_idx]
     else:
         table = Table(title="Available .npy Files")
@@ -202,7 +208,8 @@ def process_B(model):
         for i, file in enumerate(npy_files):
             table.add_row(str(i), file)
         console.print(table)
-        npy_idx = IntPrompt.ask("请选择 .npy 文件（输入编号）", choices=[str(i) for i in range(len(npy_files))], default=0)
+        npy_idx = IntPrompt.ask("请选择 .npy 文件（输入编号）", choices=[str(i) for i in range(len(npy_files))],
+                                default=0)
         embedding_input_path = npy_files[npy_idx]
 
     # 选择 B 表
@@ -212,7 +219,8 @@ def process_B(model):
     for i, file in enumerate(xlsx_files):
         table.add_row(str(i), file)
     console.print(table)
-    b_file_idx = IntPrompt.ask("请选择 B 表 .xlsx 文件（输入编号）", choices=[str(i) for i in range(len(xlsx_files))], default=0)
+    b_file_idx = IntPrompt.ask("请选择 B 表 .xlsx 文件（输入编号）", choices=[str(i) for i in range(len(xlsx_files))],
+                               default=0)
     B_table_path = xlsx_files[b_file_idx]
 
     # 加载数据
@@ -231,8 +239,10 @@ def process_B(model):
     console.print("A Table Columns:", A_df.columns.tolist())
     console.print("B Table Columns:", B_df.columns.tolist())
 
-    a_col_idx = IntPrompt.ask("请选择 A 表 '物料名称' 所在的列（输入编号）", choices=[str(i) for i in range(len(A_df.columns))], default=0)
-    b_col_idx = IntPrompt.ask("请选择 B 表 '物料名称' 所在的列（输入编号）", choices=[str(i) for i in range(len(B_df.columns))], default=0)
+    a_col_idx = IntPrompt.ask("请选择 A 表 '物料名称' 所在的列（输入编号）",
+                              choices=[str(i) for i in range(len(A_df.columns))], default=0)
+    b_col_idx = IntPrompt.ask("请选择 B 表 '物料名称' 所在的列（输入编号）",
+                              choices=[str(i) for i in range(len(B_df.columns))], default=0)
     A_col_name = A_df.columns[a_col_idx]
     B_col_name = B_df.columns[b_col_idx]
 
