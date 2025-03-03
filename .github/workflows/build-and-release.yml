@@ -37,13 +37,16 @@ jobs:
           pyinstaller -i Embeddings.png -n EmbeddingTask --optimize 2 -F main.py
         shell: bash  # 跨平台一致使用 bash（Windows 会自动适配）
 
-      # 确定构建产物的路径和名称
+      # 提取版本号并重命名构建产物
       - name: Prepare artifact
         run: |
+          VERSION=${{ github.ref_name }}  # 提取标签名，例如 v1.0.3
           if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            mv dist/EmbeddingTask.exe dist/EmbeddingTask-${{ matrix.os }}.exe
-          else
-            mv dist/EmbeddingTask dist/EmbeddingTask-${{ matrix.os }}
+            mv dist/EmbeddingTask.exe dist/EmbeddingTask-${VERSION}-windows.exe
+          elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            mv dist/EmbeddingTask dist/EmbeddingTask-${VERSION}-ubuntu
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            mv dist/EmbeddingTask dist/EmbeddingTask-${VERSION}-macos
           fi
         shell: bash
 
@@ -51,8 +54,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: EmbeddingTask-${{ matrix.os }}
-          path: dist/EmbeddingTask-${{ matrix.os }}*
+          name: EmbeddingTask-${{ github.ref_name }}-${{ matrix.os }}  # 保持 artifact 名称唯一
+          path: dist/EmbeddingTask-${{ github.ref_name }}-*
 
   release:
     needs: build  # 依赖 build 作业完成
@@ -74,9 +77,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/EmbeddingTask-ubuntu-latest/EmbeddingTask-ubuntu-latest
-            artifacts/EmbeddingTask-windows-latest/EmbeddingTask-windows-latest.exe
-            artifacts/EmbeddingTask-macos-latest/EmbeddingTask-macos-latest
+            artifacts/EmbeddingTask-${{ github.ref_name }}-ubuntu-latest/EmbeddingTask-${{ github.ref_name }}-ubuntu
+            artifacts/EmbeddingTask-${{ github.ref_name }}-windows-latest/EmbeddingTask-${{ github.ref_name }}-windows.exe
+            artifacts/EmbeddingTask-${{ github.ref_name }}-macos-latest/EmbeddingTask-${{ github.ref_name }}-macos
           draft: false
           prerelease: false
         env:
