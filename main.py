@@ -12,7 +12,7 @@ from rich.prompt import Prompt, IntPrompt
 from rich.table import Table
 from tqdm import tqdm
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 # 初始化 Rich Console
 console = Console()
 
