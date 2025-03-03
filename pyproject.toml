@@ -1,9 +1,0 @@
-[tool.bumpversion]
-current_version = "1.0.2"
-commit = true
-tag = true
-
-[[tool.bumpversion.file]]
-filename = "main.py"
-search = '__version__ = "{current_version}"'
-replace = '__version__ = "{new_version}"'
