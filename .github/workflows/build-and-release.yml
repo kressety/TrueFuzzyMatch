@@ -1,0 +1,83 @@
+name: Build and Release with PyInstaller
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # 触发条件：推送形如 v1.0.0 的标签
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]  # 跨平台：Linux, Windows, macOS
+      fail-fast: false  # 避免一个平台失败导致其他平台停止
+
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 设置 Python 环境
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'  # 指定 Python 版本，可根据需要调整
+
+      # 安装依赖
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller==6.12.0  # 确保 PyInstaller 版本一致
+
+      # 构建可执行文件
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller -i Embeddings.png -n EmbeddingTask --optimize 2 -F main.py
+        shell: bash  # 跨平台一致使用 bash（Windows 会自动适配）
+
+      # 确定构建产物的路径和名称
+      - name: Prepare artifact
+        run: |
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            mv dist/EmbeddingTask.exe dist/EmbeddingTask-${{ matrix.os }}.exe
+          else
+            mv dist/EmbeddingTask dist/EmbeddingTask-${{ matrix.os }}
+          fi
+        shell: bash
+
+      # 上传构建产物作为 artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EmbeddingTask-${{ matrix.os }}
+          path: dist/EmbeddingTask-${{ matrix.os }}*
+
+  release:
+    needs: build  # 依赖 build 作业完成
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')  # 仅在标签推送时运行
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 下载所有平台的构建产物
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # 创建 Release 并上传构建产物
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/EmbeddingTask-ubuntu-latest/EmbeddingTask-ubuntu-latest
+            artifacts/EmbeddingTask-windows-latest/EmbeddingTask-windows-latest.exe
+            artifacts/EmbeddingTask-macos-latest/EmbeddingTask-macos-latest
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
