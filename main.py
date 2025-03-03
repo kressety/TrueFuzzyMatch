@@ -55,13 +55,13 @@ def get_embedding(text, model):
             raise Exception(f"获取嵌入失败: {response.text}")
     except Exception as e:
         console.print(f"[yellow]嵌入计算警告: {e} (文本: {text[:50]})[/yellow]")
-        return None  # 返回 None 表示失败，交给上层处理
+        return None
 
 
 # 并行计算嵌入（显示总行数）
 def compute_embeddings(texts, model, max_workers=DEFAULT_MAX_WORKERS):
     try:
-        embeddings = [None] * len(texts)  # 预分配列表
+        embeddings = [None] * len(texts)
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {executor.submit(get_embedding, text, model): i for i, text in enumerate(texts)}
             for future in tqdm(futures, total=len(texts), desc="Computing embeddings"):
@@ -71,7 +71,6 @@ def compute_embeddings(texts, model, max_workers=DEFAULT_MAX_WORKERS):
                 except Exception as e:
                     console.print(f"[yellow]嵌入计算失败 (索引 {idx}): {e}[/yellow]")
                     embeddings[idx] = None
-        # 检查是否有失败的嵌入
         failed_count = sum(1 for emb in embeddings if emb is None)
         if failed_count > 0:
             console.print(f"[yellow]警告: {failed_count}/{len(texts)} 个嵌入计算失败[/yellow]")
@@ -85,7 +84,7 @@ def compute_embeddings(texts, model, max_workers=DEFAULT_MAX_WORKERS):
 def compute_similarities(query_embedding, embeddings, max_workers=DEFAULT_MAX_WORKERS):
     try:
         if query_embedding is None:
-            return [0.0] * len(embeddings)  # 如果查询嵌入无效，返回全 0
+            return [0.0] * len(embeddings)
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             similarities = list(executor.map(lambda emb: cosine_similarity(query_embedding, emb) if emb is not None else 0.0, embeddings))
         return similarities
@@ -262,8 +261,11 @@ def process_B(model):
             best_match_idx = np.argmax(similarities)
             best_similarity = similarities[best_match_idx]
             best_match_row = A_df.iloc[best_match_idx]
-            B_df.at[index, 'MaterialCode'] = best_match_row['物料编码']
-            B_df.at[index, 'UnitCode'] = best_match_row['计量单位编码']
+            # 检查列名是否存在再赋值
+            if '物料编码' in A_df.columns:
+                B_df.at[index, 'MaterialCode'] = best_match_row['物料编码']
+            if '计量单位编码' in A_df.columns:
+                B_df.at[index, 'UnitCode'] = best_match_row['计量单位编码']
             B_df.at[index, 'MatchedMaterialName'] = best_match_row[A_col_name]
             B_df.at[index, 'Similarity'] = best_similarity
             pbar.update(1)
